@@ -1,0 +1,13 @@
+# Virtual environments
+/env
+
+# Data folder structure
+/data/**
+!/data/CT/
+!/data/PET/
+!/data/CT/.gitkeep
+!/data/PET/.gitkeep
+
+# Private lab instructions and data
+/resources/ACR-PETCT-Lab-Instructions-2023.pdf
+/resources/QPET-mCT-report-med-phys-IV.xlsx
