@@ -21,9 +21,6 @@ os.makedirs(OUTPUT_PATH, exist_ok=True)
 
 REFERENCE_VIAL_SIZES = [8, 12, 16, 25, 25, 25, 25]
 
-PATIENT_WEIGHT = 70     # kg
-DELIVERED_DOSE = 10     # mCi
-
 
 # Load in all the images
 data_paths = [
@@ -72,6 +69,11 @@ PET_pixel_spacing = PET_image.PixelSpacing
 PET_positioning = PET_image.ImagePositionPatient
 PET_x_vals = np.arange(PET_array_size[0])*PET_pixel_spacing[0] + PET_positioning[0]
 PET_y_vals = np.arange(PET_array_size[1])*PET_pixel_spacing[1] + PET_positioning[1]
+PET_DOSE = float(PET_image.RadiopharmaceuticalInformationSequence[0].RadionuclideTotalDose)
+PET_HALF_LIFE = float(PET_image.RadiopharmaceuticalInformationSequence[0].RadionuclideHalfLife)
+PET_START_TIME = float(PET_image.RadiopharmaceuticalInformationSequence[0].RadiopharmaceuticalStartTime)
+PET_ACQUISITION_TIME = float(PET_image.AcquisitionTime)
+PATIENT_WEIGHT = float(PET_image.PatientWeight)
 
 plt.figure(figsize=(6,6))
 plt.imshow(CT_array, origin='lower', extent=[min(CT_x_vals),max(CT_x_vals),min(CT_y_vals),max(CT_y_vals)], cmap=plt.cm.bone)
@@ -187,7 +189,8 @@ for i,sequence_type in enumerate(sequence_types):
                 temp_vol = temp_im_pixels[yy,xx]
                 # Convert to SUV
                 # NOTE: not accounting for decay here
-                temp_vol = (temp_vol * (PATIENT_WEIGHT*1000)) / (2 * (DELIVERED_DOSE*37000000))
+                # delta_time = PET_ACQUISITION_TIME - PET_START_TIME
+                temp_vol = (temp_vol * (PATIENT_WEIGHT*1000)) / (2 * PET_DOSE)# * (2**(-delta_time/PET_HALF_LIFE)))
             voxel_match[yy,xx] = temp_vol
             temp_vial_val.append(temp_vol)
         all_vial_vals[sequence_type].append(temp_vial_val)
@@ -310,7 +313,7 @@ PASSING_CRITERIA = {
     '16/25 Ratio': ratio_16mm_25mm > 0.7
 }
 
-ACR_eval_form_img = np.asarray(Image.open('PET-Phantom-Instructions-for-Evaluation-of-PET-Image-Quality_Page-15.png'))
+ACR_eval_form_img = np.asarray(Image.open(os.path.join('resources', 'PET-Phantom-Instructions-for-Evaluation-of-PET-Image-Quality_Page-15.png')))
 ny,nx = ACR_eval_form_img.shape
 plt.figure(figsize=(8.5,11))
 plt.imshow(ACR_eval_form_img, cmap=plt.cm.bone)
