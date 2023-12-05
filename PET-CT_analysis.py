@@ -47,6 +47,7 @@ for data_name,data_path in data_paths:
 # TODO: do this automatically
 CT_SLICE_LOCATION = 105
 # Assuming the origins are the same
+PET_RESCALE_SLOPE = all_images['PET'][0].RescaleSlope
 PET_SCALING_FACTOR = all_images['PET'][0].SliceThickness / 10       # mm
 PET_SLICE_LOCATION = int(CT_SLICE_LOCATION * PET_SCALING_FACTOR)
 
@@ -71,8 +72,8 @@ PET_x_vals = np.arange(PET_array_size[0])*PET_pixel_spacing[0] + PET_positioning
 PET_y_vals = np.arange(PET_array_size[1])*PET_pixel_spacing[1] + PET_positioning[1]
 PET_DOSE = float(PET_image.RadiopharmaceuticalInformationSequence[0].RadionuclideTotalDose)
 PET_HALF_LIFE = float(PET_image.RadiopharmaceuticalInformationSequence[0].RadionuclideHalfLife)
-PET_START_TIME = float(PET_image.RadiopharmaceuticalInformationSequence[0].RadiopharmaceuticalStartTime)
-PET_ACQUISITION_TIME = float(PET_image.AcquisitionTime)
+PET_START_TIME = datetime.datetime.strptime(str(int(float(PET_image.RadiopharmaceuticalInformationSequence[0].RadiopharmaceuticalStartTime))), '%H%M%S')
+PET_ACQUISITION_TIME = datetime.datetime.strptime(str(int(float(PET_image.AcquisitionTime))), '%H%M%S')
 PATIENT_WEIGHT = float(PET_image.PatientWeight)
 
 plt.figure(figsize=(6,6))
@@ -189,8 +190,8 @@ for i,sequence_type in enumerate(sequence_types):
                 temp_vol = temp_im_pixels[yy,xx]
                 # Convert to SUV
                 # NOTE: not accounting for decay here
-                # delta_time = PET_ACQUISITION_TIME - PET_START_TIME
-                temp_vol = (temp_vol * (PATIENT_WEIGHT*1000)) / (2 * PET_DOSE)# * (2**(-delta_time/PET_HALF_LIFE)))
+                delta_time = (PET_ACQUISITION_TIME - PET_START_TIME).seconds
+                temp_vol = (temp_vol * (PATIENT_WEIGHT*1000) * PET_RESCALE_SLOPE) / (PET_DOSE * (2**(-delta_time/PET_HALF_LIFE)))
             voxel_match[yy,xx] = temp_vol
             temp_vial_val.append(temp_vol)
         all_vial_vals[sequence_type].append(temp_vial_val)
